@@ -1,0 +1,101 @@
+<html>
+  <head>
+    <title>LED Colors</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.0/css/bulma.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma-extensions@6.2.7/dist/css/bulma-extensions.min.css">  </head>
+    <script defer src="https://use.fontawesome.com/releases/v5.14.0/js/all.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bulma-extensions@6.2.7/dist/js/bulma-extensions.min.js"></script>
+  <body>
+    <section class="hero is-medium is-dark is-bold">
+      <div class="hero-body">
+        <div class="container">
+          <h1 class="title">
+            LED Colors
+          </h1>
+          <h2 class="subtitle">
+            Pick colors for LEDs
+          </h2>
+        </div>
+      </div>
+    </section>
+    <div class="container">
+      <div class="tile is-parent" style="display: flex; justify-content: space-between;">
+        <div>
+          <p class="title is-5 is-spaced">On / Off</p>
+        </div>
+        <div name="switch">
+          <input id="onOffToggle" type="checkbox" name="onOffToggle" class="switch is-rounded" {{ is_checked }} onclick="toggle_on_off()">
+          <label for="onOffToggle"></label>
+        </div>
+      </div>
+      <div class="tile is-parent">
+        <p class="title is-3 is-spaced">Pick an existing color...</p>
+      </div>
+      <div class="tile is-parent">
+        <article class="tile is-paddingless is-child box">
+          <button class="button is-fullwidth" style="background-color: #E7404A; color: #eeeeee" onclick="change_color(this, '#E7404A')">Passion</button>
+        </article>
+        <article class="tile is-paddingless is-child box">
+          <button class="button is-fullwidth" style="background-color: #FF834C; color: #eeeeee" onclick="change_color(this, '#FF5800')">Friendship</button>
+        </article>
+        <article class="tile is-paddingless is-child box">
+          <button class="button is-fullwidth" style="background-color: #F5CC38; color: #eeeeee" onclick="change_color(this, '#F5CC38')">Happiness</button>
+        </article>
+      </div>
+      <div class="tile is-parent">
+        <article class="tile is-paddingless is-child box">
+          <button class="button is-fullwidth" style="background-color: #6111CC; color: #eeeeee" onclick="change_color(this, '#6111CC')">Royalty</button>
+        </article>
+        <article class="tile is-paddingless is-child box">
+          <button class="button is-fullwidth" style="background-color: #2CB7D0; color: #eeeeee" onclick="change_color(this, '#2CB7D0')">Trust</button>
+        </article>
+        <article class="tile is-paddingless is-child box">
+          <button class="button is-fullwidth" style="background-color: #27B873; color: #eeeeee" onclick="change_color(this, '#27B873')">Wealth</button>
+        </article>
+      </div>
+
+      <div class="tile is-parent">
+        <p class="title is-4 is-spaced">...or choose a custom one !</p>
+      </div>
+      <div class="tile is-parent">
+        <article class="tile is-paddingless is-child box" style="background: linear-gradient(to right, orange , yellow, green, cyan, blue, violet);">
+          <input class="button is-fullwidth" type="color" value="#6111CC" id="colorPicker" style="opacity: 0"/>
+        </article>
+      </div>
+    </div>
+
+    <script>
+      var initial_color = "{{ color }}"
+      var is_on = "{{ is_on }}" == "True"
+
+      function change_color(event, color) {
+        var request = new XMLHttpRequest();
+        request.open('POST', "/color", true);
+        request.onerror = function() {
+            console.error("Something went wrong submitting the form.")
+        };
+
+        request.send(`{ "color": "${color}" }`);
+
+        if (color !== "#000000") {
+          is_on = true
+        }
+      }
+
+      function toggle_on_off(event) {
+        if (is_on) {
+          change_color({}, "#000000")
+          is_on = false
+        } else {
+          change_color({}, "#FF5800")
+        }
+      }
+
+      document.getElementById("colorPicker").onchange = function() {
+        console.log(this.value);
+        change_color({}, this.value)
+      }
+    </script>
+
+</html>

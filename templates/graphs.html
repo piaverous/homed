@@ -1,0 +1,104 @@
+<html>
+  <head>
+    <title>LED Colors</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.0/css/bulma.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma-extensions@6.2.7/dist/css/bulma-extensions.min.css">  
+    <script defer src="https://use.fontawesome.com/releases/v5.14.0/js/all.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bulma-extensions@6.2.7/dist/js/bulma-extensions.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.3/dist/Chart.min.js"></script>
+  </head>
+  <body>
+    <section class="hero is-medium is-dark is-bold">
+      <div class="hero-body">
+        <div class="container">
+          <h1 class="title">
+            Graphs
+          </h1>
+          <h2 class="subtitle">
+            Beautiful graphs
+          </h2>
+        </div>
+      </div>
+    </section>
+    <div class="container">
+      <canvas id="myChart" width="400" height="200"></canvas>
+      <script>
+      var ctx = document.getElementById('myChart').getContext('2d');
+
+      fetch("/data")
+        .then(function(response) {
+          return response.json();
+        })
+        .then(function(jsonResponse) {
+          console.log(jsonResponse);
+
+          temperature = jsonResponse.temperature.map(entry => entry[1])
+          humidity = jsonResponse.humidity.map(entry => entry[1])
+          dates = jsonResponse.humidity.map(entry => entry[2])
+
+          var myChart = new Chart(ctx, {
+              type: 'line',
+              data: {
+                labels: dates,
+                datasets: [
+                  {
+                    label: "Temperature (°C)",
+                    data: temperature,
+                    borderColor: "#3cba9f",
+                    fill: false,
+                  },
+                  {
+                    label: "Humidity (%)",
+                    data: humidity,
+                    borderColor: "#3e95cd",
+                    fill: false,
+                  }
+                ]
+              },
+              options: {
+                responsive: true,
+                title: {
+                  display: true,
+                  text: 'Temperature and Humidity at home'
+                }
+              }
+          });
+          myChart.update()
+        });
+      </script>
+    </div>
+    <script>
+      var initial_color = "{{ color }}"
+      var is_on = "{{ is_on }}" == "True"
+
+      function change_color(event, color) {
+        var request = new XMLHttpRequest();
+        request.open('POST', "/color", true);
+        request.onerror = function() {
+            console.error("Something went wrong submitting the form.")
+        };
+
+        request.send(`{ "color": "${color}" }`);
+
+        if (color !== "#000000") {
+          is_on = true
+        }
+      }
+
+      function toggle_on_off(event) {
+        if (is_on) {
+          change_color({}, "#000000")
+          is_on = false
+        } else {
+          change_color({}, "#FF5800")
+        }
+      }
+
+      document.getElementById("colorPicker").onchange = function() {
+        console.log(this.value);
+        change_color({}, this.value)
+      }
+    </script>
+
+</html>

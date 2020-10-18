@@ -1,0 +1,11 @@
+[Unit]
+Description=The Pigpio Daemon
+
+[Service]
+ExecStart=/usr/bin/pigpiod 
+ExecStop=/bin/systemctl kill pigpiod
+Type=forking
+
+[Install]
+WantedBy=multi-user.target
+Alias=pigpiod
