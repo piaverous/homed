@@ -1,7 +1,9 @@
 import asyncio
 import logging
 import platform
+import numpy as np
 from typing import Dict
+from scipy.ndimage import gaussian_filter1d
 from fastapi import FastAPI, Request, Form
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
@@ -90,7 +92,27 @@ def get_all_temps():
     cur.execute(query_hums)
     hums = cur.fetchall()
 
-    return {"temperature": temps, "humidity": hums}
+    # Filter out data points where temp variability is bigger than 5°C
+    filtered_temps = []
+    for i in range(2, len(temps)):
+        if abs(temps[i-1][1] - temps[i-2][1]) < 5 and abs(temps[i][1] - temps[i-1][1]) < 5:
+            filtered_temps.append(temps[i-1])
+
+    # Filter out data points where hum variability is bigger than 5%
+    filtered_hums = []
+    for i in range(2, len(hums)):
+        if abs(hums[i-1][1] - hums[i-2][1]) < 5 and abs(hums[i][1] - hums[i-1][1]) < 5:
+            filtered_hums.append(hums[i-1])
+
+    filtered_temps = np.array(filtered_temps)
+    filtered_hums = np.array(filtered_hums)
+
+    # Apply gaussian filter to temps and Humidity to flatten the curve
+    sigma = 4
+    filtered_temps[:,1] = gaussian_filter1d(filtered_temps[:,1], sigma)
+    filtered_hums[:,1] = gaussian_filter1d(filtered_hums[:,1], sigma)
+
+    return {"temperature": filtered_temps.tolist(), "humidity": filtered_hums.tolist()}
 
 
 @app.post("/color/")

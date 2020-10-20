@@ -65,6 +65,9 @@
             scales: {
               xAxes: [{
                   type: 'time',
+                  time: {
+                      unit: 'day'
+                  }
               }]
             },
           }
@@ -110,37 +113,4 @@
           });
         });
     </script>
-    <script>
-      var initial_color = "{{ color }}"
-      var is_on = "{{ is_on }}" == "True"
-
-      function change_color(event, color) {
-        var request = new XMLHttpRequest();
-        request.open('POST', "/color", true);
-        request.onerror = function() {
-            console.error("Something went wrong submitting the form.")
-        };
-
-        request.send(`{ "color": "${color}" }`);
-
-        if (color !== "#000000") {
-          is_on = true
-        }
-      }
-
-      function toggle_on_off(event) {
-        if (is_on) {
-          change_color({}, "#000000")
-          is_on = false
-        } else {
-          change_color({}, "#FF5800")
-        }
-      }
-
-      document.getElementById("colorPicker").onchange = function() {
-        console.log(this.value);
-        change_color({}, this.value)
-      }
-    </script>
-
 </html>

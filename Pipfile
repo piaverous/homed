@@ -9,6 +9,7 @@ jinja2 = "*"
 aiofiles = "*"
 python-multipart = "*"
 # ADAFRUIT DHT from https://github.com/adafruit/Adafruit_Python_DHT.git
+scipy = "*"
 
 [requires]
 python_version = "3.8"
