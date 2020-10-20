@@ -1,25 +1,35 @@
 import asyncio
 import logging
+import platform
 from typing import Dict
 from fastapi import FastAPI, Request, Form
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
+from fastapi.staticfiles import StaticFiles
 
 from pprint import pprint
 from utils import set_color_hex, get_global_color
 from sqlite import SQLiteClient
-from homed import Daemon
+
+if platform.system() == "Linux":
+    from homed import Daemon
 
 templates = Jinja2Templates(directory="templates")
 
 app = FastAPI()
 app.logger = logging.getLogger("uvicorn")
 
+app.mount("/dist", StaticFiles(directory="templates/dist"), name="dist")
+
+
 @app.on_event("startup")
 async def startup_event():
-    homed = Daemon()
-    loop = asyncio.get_event_loop()
-    loop.create_task(homed.start())
+    if platform.system() == "Linux":
+        homed = Daemon()
+        loop = asyncio.get_event_loop()
+        loop.create_task(homed.start())
+    else:
+        print(f"Unexpected platform {platform.system()}. Did not launch homed daemon.")
 
 @app.get("/on")
 def on():
@@ -76,7 +86,7 @@ def get_all_temps():
     cur.execute(query_temps)
     temps = cur.fetchall()
     
-    query_hums = f"SELECT * FROM humidity WHERE ts > {from_date} ORDER BY ts"
+    query_hums = f"SELECT * FROM humidity WHERE ts > {from_date} AND hum <= 100 ORDER BY ts"
     cur.execute(query_hums)
     hums = cur.fetchall()
 
