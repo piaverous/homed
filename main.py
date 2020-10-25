@@ -115,7 +115,18 @@ def get_all_temps():
 
     return {"temperature": filtered_temps.tolist(), "humidity": filtered_hums.tolist()}
 
+@app.get("/ow/data")
+def get_all_temps():
+    conn = SQLiteClient().db
+    cur = conn.cursor()
 
+    from_date = 0
+    query = f"SELECT * FROM openweather WHERE ts > {from_date} ORDER BY ts"
+    cur.execute(query)
+    data = cur.fetchall()
+    
+    return data
+    
 @app.post("/color/")
 async def create_item(body: Dict):
     set_color_hex(body["color"])
