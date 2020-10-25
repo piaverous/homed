@@ -19,19 +19,11 @@ MEASUREMENT_FREQUENCY_SECONDS = 30
 OPEN_WEATHER_BASE = "http://api.openweathermap.org/data/2.5/weather"
 OPEN_WEATHER_URL = f"{OPEN_WEATHER_BASE}?lat={os.getenv('HOME_COORDS_LAT')}&lon={os.getenv('HOME_COORDS_LON')}&appid={os.getenv('OPENWEATHERMAP_API_KEY')}&units=metric"
 
-temperature_table = Table(
-    "temperature",
+home_measures = Table(
+    "home_measures",
     [
         Row("id", "INTEGER PRIMARY KEY"),
         Row("deg", "INTEGER NOT NULL"), # Temperature
-        Row("ts", "INTEGER NOT NULL"),  # Timestamp
-    ]
-)
-
-humidity_table = Table(
-    "humidity",
-    [
-        Row("id", "INTEGER PRIMARY KEY"),
         Row("hum", "INTEGER NOT NULL"), # Humidity
         Row("ts", "INTEGER NOT NULL"),  # Timestamp
     ]
@@ -41,10 +33,10 @@ openweather_measurements = Table(
     "openweather",
     [
         Row("id", "INTEGER PRIMARY KEY"),
-        Row("deg", "INTEGER NOT NULL"), # Temperature
+        Row("deg", "REAL NOT NULL"), # Temperature
         Row("hum", "INTEGER NOT NULL"), # Humidity
         Row("pre", "INTEGER NOT NULL"), # Pressure
-        Row("wsp", "INTEGER NOT NULL"), # Wind Speed
+        Row("wsp", "REAL NOT NULL"), # Wind Speed
         Row("wag", "INTEGER NOT NULL"), # Wind Angle
         Row("rai", "INTEGER NOT NULL"), # Rain (boolean 1-true or 0-false)
         Row("sno", "INTEGER NOT NULL"), # Snow (boolean 1-true or 0-false)
@@ -62,8 +54,7 @@ class Daemon:
         self.log = logging.getLogger("homed")
         self.running = False
         self.tables = [
-            temperature_table, 
-            humidity_table,
+            home_measures, 
             openweather_measurements,
         ]
         self.sensor, self.pin = Adafruit_DHT.DHT11, 4
@@ -105,8 +96,7 @@ class Daemon:
         signal.signal(signal.SIGINT, self.exit_gracefully)
         signal.signal(signal.SIGTERM, self.exit_gracefully)
 
-        temp_sql_query = f"INSERT INTO temperature(deg,ts) VALUES (?,?)"
-        humi_sql_query = f"INSERT INTO humidity(hum,ts) VALUES (?,?)"
+        home_sql_query = f"INSERT INTO home_measures(deg,hum,ts) VALUES (?,?,?)"
 
         self.conn = SQLiteClient()
         while self.running:
@@ -125,8 +115,7 @@ class Daemon:
                 print(f"Temp={temperature}°C | Hum={humidity}% | Dur={ts-init_ts}")
 
                 cur = self.conn.db.cursor()
-                cur.execute(temp_sql_query, (temperature, ts))
-                cur.execute(humi_sql_query, (humidity, ts))
+                cur.execute(home_sql_query, (temperature, humidity, ts))
                 self.conn.db.commit()
 
                 final_ts = self.get_timestamp()

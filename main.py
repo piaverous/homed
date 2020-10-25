@@ -85,11 +85,11 @@ def get_all_temps():
     cur = conn.cursor()
 
     from_date = 0
-    query_temps = f"SELECT * FROM temperature WHERE ts > {from_date} ORDER BY ts"
+    query_temps = f"SELECT id,deg,ts FROM home_measures WHERE ts > {from_date} ORDER BY ts"
     cur.execute(query_temps)
     temps = cur.fetchall()
     
-    query_hums = f"SELECT * FROM humidity WHERE ts > {from_date} AND hum <= 100 ORDER BY ts"
+    query_hums = f"SELECT id,hum,ts FROM home_measures WHERE ts > {from_date} AND hum <= 100 ORDER BY ts"
     cur.execute(query_hums)
     hums = cur.fetchall()
 
@@ -126,7 +126,7 @@ def get_all_temps():
     data = cur.fetchall()
     
     return data
-    
+
 @app.post("/color/")
 async def create_item(body: Dict):
     set_color_hex(body["color"])
