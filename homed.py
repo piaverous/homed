@@ -1,21 +1,30 @@
 import Adafruit_DHT
 import asyncio
 import logging
+import os
+import requests
 import signal
 import sys
 import time 
 
+from dotenv import load_dotenv
 from sqlite import SQLiteClient, Table, Row
 from typing import List
 
+load_dotenv()
+
 REFERENCE_TIMESTAMP = 1577836800
+MEASUREMENT_FREQUENCY_SECONDS = 30
+
+OPEN_WEATHER_BASE = "http://api.openweathermap.org/data/2.5/weather"
+OPEN_WEATHER_URL = f"{OPEN_WEATHER_BASE}?lat={os.getenv('HOME_COORDS_LAT')}&lon={os.getenv('HOME_COORDS_LON')}&appid={os.getenv('OPENWEATHERMAP_API_KEY')}&units=metric"
 
 temperature_table = Table(
     "temperature",
     [
         Row("id", "INTEGER PRIMARY KEY"),
-        Row("deg", "INTEGER NOT NULL"),
-        Row("ts", "INTEGER NOT NULL"),
+        Row("deg", "INTEGER NOT NULL"), # Temperature
+        Row("ts", "INTEGER NOT NULL"),  # Timestamp
     ]
 )
 
@@ -23,8 +32,23 @@ humidity_table = Table(
     "humidity",
     [
         Row("id", "INTEGER PRIMARY KEY"),
-        Row("hum", "INTEGER NOT NULL"),
-        Row("ts", "INTEGER NOT NULL"),
+        Row("hum", "INTEGER NOT NULL"), # Humidity
+        Row("ts", "INTEGER NOT NULL"),  # Timestamp
+    ]
+)
+
+openweather_measurements = Table(
+    "openweather",
+    [
+        Row("id", "INTEGER PRIMARY KEY"),
+        Row("deg", "INTEGER NOT NULL"), # Temperature
+        Row("hum", "INTEGER NOT NULL"), # Humidity
+        Row("pre", "INTEGER NOT NULL"), # Pressure
+        Row("wsp", "INTEGER NOT NULL"), # Wind Speed
+        Row("wag", "INTEGER NOT NULL"), # Wind Angle
+        Row("rai", "INTEGER NOT NULL"), # Rain (boolean 1-true or 0-false)
+        Row("sno", "INTEGER NOT NULL"), # Snow (boolean 1-true or 0-false)
+        Row("ts", "INTEGER NOT NULL"),  # Timestamp
     ]
 )
 
@@ -39,7 +63,8 @@ class Daemon:
         self.running = False
         self.tables = [
             temperature_table, 
-            humidity_table
+            humidity_table,
+            openweather_measurements,
         ]
         self.sensor, self.pin = Adafruit_DHT.DHT11, 4
 
@@ -75,7 +100,7 @@ class Daemon:
         conn.db.close()
 
 
-    async def start(self):
+    async def start_sensor(self):
         self.running = True
         signal.signal(signal.SIGINT, self.exit_gracefully)
         signal.signal(signal.SIGTERM, self.exit_gracefully)
@@ -85,31 +110,74 @@ class Daemon:
 
         self.conn = SQLiteClient()
         while self.running:
-            init_ts = self.get_timestamp()
+            try:
+                init_ts = self.get_timestamp()
 
-            humidity, temperature = Adafruit_DHT.read_retry(
-                self.sensor, 
-                self.pin
-            )
-            ts = self.get_timestamp()
-            if not humidity or not temperature:
-                print(f"Failure in measurement at ts={ts}")
+                humidity, temperature = Adafruit_DHT.read_retry(
+                    self.sensor, 
+                    self.pin
+                )
+                ts = self.get_timestamp()
+                if not humidity or not temperature:
+                    print(f"Failure in measurement at ts={ts}")
+                    continue
+
+                print(f"Temp={temperature}°C | Hum={humidity}% | Dur={ts-init_ts}")
+
+                cur = self.conn.db.cursor()
+                cur.execute(temp_sql_query, (temperature, ts))
+                cur.execute(humi_sql_query, (humidity, ts))
+                self.conn.db.commit()
+
+                final_ts = self.get_timestamp()
+                await asyncio.sleep(MEASUREMENT_FREQUENCY_SECONDS - final_ts + init_ts) # Make sure every N seconds exactly a new measurement is made
+            except Exception as err:
+                print(f"WARN: encountered error but continuing: {err}")
                 continue
+        self.conn.db.close()
 
-            print(f"Temp={temperature}°C | Hum={humidity}% | Dur={ts-init_ts}")
+    async def start_openweather_collection(self):
+        self.running = True
+        signal.signal(signal.SIGINT, self.exit_gracefully)
+        signal.signal(signal.SIGTERM, self.exit_gracefully)
 
-            cur = self.conn.db.cursor()
-            cur.execute(temp_sql_query, (temperature, ts))
-            cur.execute(humi_sql_query, (humidity, ts))
-            self.conn.db.commit()
+        openweather_sql_query = f"INSERT INTO openweather(deg,hum,pre,wsp,wag,rai,sno,ts) VALUES (?,?,?,?,?,?,?,?)"
 
-            final_ts = self.get_timestamp()
-            await asyncio.sleep(30 - final_ts + init_ts) # Make sure every 5 seconds exactly a new measurement is made
+        self.conn = SQLiteClient()
+        while self.running:
+            try:
+                init_ts = self.get_timestamp()
+                res = requests.get(OPEN_WEATHER_URL).json()
+                main_data = res["main"]
+
+                deg, hum, pre = main_data["temp"], main_data["humidity"], main_data["pressure"]
+                ts = self.get_timestamp()
+
+                wind_info = res["wind"]
+                wsp, wag = wind_info["speed"], wind_info["deg"]
+
+                rai = 1 if "rain" in res.keys() else 0
+                sno = 1 if "snow" in res.keys() else 0
+
+                print(f"Openweather data : {deg} - {hum} - {pre} - {wsp} - {wag} - {rai} - {sno} - {ts}")
+
+                cur = self.conn.db.cursor()
+                cur.execute(openweather_sql_query, (deg,hum,pre,wsp,wag,rai,sno,ts))
+                self.conn.db.commit()
+
+                final_ts = self.get_timestamp()
+                await asyncio.sleep(MEASUREMENT_FREQUENCY_SECONDS - final_ts + init_ts) # Make sure every N seconds exactly a new measurement is made
+            except Exception as err:
+                print(f"WARN: encountered error but continuing: {err}")
+                continue
         self.conn.db.close()
 
 if __name__ == "__main__":
     daemon = Daemon()
 
     loop = asyncio.get_event_loop()
-    loop.run_until_complete(daemon.start())
+    loop.run_until_complete(asyncio.wait([
+        daemon.start_sensor(), 
+        daemon.start_openweather_collection()
+    ]))
     loop.close()

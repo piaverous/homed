@@ -29,7 +29,8 @@ async def startup_event():
     if platform.system() == "Linux":
         homed = Daemon()
         loop = asyncio.get_event_loop()
-        loop.create_task(homed.start())
+        loop.create_task(homed.start_sensor())
+        loop.create_task(homed.start_openweather_collection())
     else:
         print(f"Unexpected platform {platform.system()}. Did not launch homed daemon.")
 
