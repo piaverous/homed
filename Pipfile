@@ -21,6 +21,7 @@ python-multipart = "*"
 # ADAFRUIT DHT from https://github.com/adafruit/Adafruit_Python_DHT.git
 scipy = "*"
 cython = "*"
+requests = "*"
 
 [requires]
 python_version = "3.7"
