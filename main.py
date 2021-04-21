@@ -1,10 +1,11 @@
 import asyncio
 import logging
 import platform
+import json
 import numpy as np
 from typing import Dict
 from scipy.ndimage import gaussian_filter1d
-from fastapi import FastAPI, Request, Form
+from fastapi import FastAPI, Request, Form, Response
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
@@ -128,5 +129,15 @@ def get_all_temps():
     return data
 
 @app.post("/color/")
-async def create_item(body: Dict):
+async def set_color_post(body: Dict):
     set_color_hex(body["color"])
+
+@app.get("/color/set/")
+async def set_color_get(color: str = "#000000"):
+    print(color)
+    set_color_hex(color)
+
+@app.get("/color/get/")
+async def get_color():
+    color, is_on = get_global_color()
+    return Response(content=color, media_type="text/plain")

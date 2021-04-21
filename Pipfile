@@ -23,6 +23,7 @@ scipy = "*"
 cython = "*"
 requests = "*"
 python-dotenv = "*"
+prometheus-client = "*"
 
 [requires]
 python_version = "3.7"

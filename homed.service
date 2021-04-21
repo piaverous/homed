@@ -10,6 +10,7 @@ Group=pi
 Environment="PYTHONPATH=/home/pi/.local/share/virtualenvs/homed-QgMZGI3M/lib/python3.8"
 Environment="PATH=/home/pi/.pyenv/plugins/pyenv-virtualenv/shims:/home/pi/.pyenv/shims:/usr/local/bin:/usr/bin:/bin:/snap/bin:/home/pi/.local/bin:/home/pi/.pyenv/bin:/snap/bin:/home/pi/.local/bin:/home/pi/.pyenv/bin"
 Environment="PYENV_VIRTUALENV_INIT=1"
+Environment="PYTHONUNBUFFERED=1"
 WorkingDirectory=/home/pi/Coding/homed
 ExecStart=/home/pi/.local/bin/pipenv run prod
 

@@ -7,11 +7,15 @@ import signal
 import sys
 import time 
 
+from prometheus_client import start_http_server, Gauge
 from dotenv import load_dotenv
 from sqlite import SQLiteClient, Table, Row
 from typing import List
 
 load_dotenv()
+
+temp_gauge = Gauge('temperature_living_room', 'Temperature in living room in °C')
+hum_gauge = Gauge('humidity_living_room', 'Humidity in living room in %')
 
 REFERENCE_TIMESTAMP = 1577836800
 MEASUREMENT_FREQUENCY_SECONDS = 30
@@ -59,7 +63,9 @@ class Daemon:
         ]
         self.sensor, self.pin = Adafruit_DHT.DHT11, 4
 
+        start_http_server(8070)
         self.initialize_sqlite_db()
+        print("Done initializing !")
 
     def get_timestamp(self):
         return int(time.time()) - REFERENCE_TIMESTAMP
@@ -107,6 +113,10 @@ class Daemon:
                     self.sensor, 
                     self.pin
                 )
+
+                temp_gauge.set(temperature)
+                hum_gauge.set(humidity)
+
                 ts = self.get_timestamp()
                 if not humidity or not temperature:
                     print(f"Failure in measurement at ts={ts}")
