@@ -6,7 +6,6 @@ class SQLiteClient:
     
     def __exit__(self, exc_type, exc, tb):
         self.db.close()
-        print("bye")
 
     async def __aexit__(self, exc_type, exc, tb):
         self.__exit__(exc_type, exc, tb)
@@ -15,5 +14,4 @@ class SQLiteClient:
         self.__enter__()
     
     def __init__(self):
-        print("hello")
         self.db = sqlite3.connect('/data/storage/Pivrous/grafana/home.db')
