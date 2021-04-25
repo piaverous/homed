@@ -2,6 +2,7 @@ from fastapi import APIRouter, Response
 from typing import Dict
 
 from utils.leds import set_color_hex, get_global_color
+from utils.cache import color_cache
 
 router = APIRouter(
     prefix="/color",
@@ -19,11 +20,14 @@ def init():
 
 @router.post("/")
 async def set_color_post(body: Dict):
-    set_color_hex(body["color"])
+    color = body["color"]
+    color_cache["color"] = color
+    set_color_hex(color)
 
 
 @router.get("/set")
 async def set_color_get(color: str = "#000000"):
+    color_cache["color"] = color
     set_color_hex(color)
 
 

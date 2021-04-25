@@ -1,4 +1,5 @@
 import pigpio
+from utils.cache import color_cache
 
 MAX_BRIGHTNESS = 255
 RED_PIN, GREEN_PIN, BLUE_PIN = 17, 24, 22
@@ -34,11 +35,16 @@ def get_led_color(pin):
 
 
 def get_global_color():
-	red = get_led_color(RED_PIN)
-	green = get_led_color(GREEN_PIN)
-	blue = get_led_color(BLUE_PIN)
-	
-	if red == 0 and green == 0 and blue == 0:
-		return "#000000", False
-	
-	return '#%02x%02x%02x' % (red, green, blue), True
+	if "color" in color_cache.keys():
+		return color_cache["color"], True
+	else:
+		red = get_led_color(RED_PIN)
+		green = get_led_color(GREEN_PIN)
+		blue = get_led_color(BLUE_PIN)
+		
+		if red == 0 and green == 0 and blue == 0:
+			return "#000000", False
+		
+		color = '#%02x%02x%02x' % (red, green, blue)
+		color_cache["color"] = color
+		return color, True

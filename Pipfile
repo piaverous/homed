@@ -24,6 +24,8 @@ cython = "*"
 requests = "*"
 python-dotenv = "*"
 prometheus-client = "*"
+prometheus-fastapi-instrumentator = "*"
+cachetools = "*"
 
 [requires]
 python_version = "3.7"

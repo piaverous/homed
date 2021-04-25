@@ -12,6 +12,8 @@ from dotenv import load_dotenv
 from sqlite import SQLiteClient, Table, Row
 from typing import List
 
+from utils.cache import sensor_cache
+
 load_dotenv()
 
 temp_gauge = Gauge('temperature_living_room', 'Temperature in living room in °C')
@@ -113,6 +115,9 @@ class Daemon:
                     self.sensor, 
                     self.pin
                 )
+
+                sensor_cache["temperature"] = temperature
+                sensor_cache["humidity"] = humidity
 
                 temp_gauge.set(temperature)
                 hum_gauge.set(humidity)

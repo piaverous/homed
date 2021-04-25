@@ -4,6 +4,7 @@ import platform
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
+from prometheus_fastapi_instrumentator import Instrumentator
 
 from routers import leds, weather
 from utils.leds import get_global_color
@@ -44,3 +45,5 @@ async def render(request: Request):
             "is_checked": is_checked
         }
     )
+
+Instrumentator().instrument(app).expose(app)
