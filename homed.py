@@ -137,6 +137,7 @@ class Daemon:
                 await asyncio.sleep(MEASUREMENT_FREQUENCY_SECONDS - final_ts + init_ts) # Make sure every N seconds exactly a new measurement is made
             except Exception as err:
                 print(f"WARN: encountered error but continuing: {err}")
+                await asyncio.sleep(MEASUREMENT_FREQUENCY_SECONDS)
                 continue
         self.conn.db.close()
 
@@ -173,6 +174,7 @@ class Daemon:
                 await asyncio.sleep(MEASUREMENT_FREQUENCY_SECONDS - final_ts + init_ts) # Make sure every N seconds exactly a new measurement is made
             except Exception as err:
                 print(f"WARN: encountered error but continuing: {err}")
+                await asyncio.sleep(MEASUREMENT_FREQUENCY_SECONDS)
                 continue
         self.conn.db.close()
 
