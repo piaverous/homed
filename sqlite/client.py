@@ -14,4 +14,4 @@ class SQLiteClient:
         self.__enter__()
     
     def __init__(self):
-        self.db = sqlite3.connect('/data/storage/Pivrous/grafana/home.db')
+        self.db = sqlite3.connect('/data/storage/home.db')
